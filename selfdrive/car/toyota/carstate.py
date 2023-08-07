@@ -1,5 +1,5 @@
 import copy
-
+from common.params import Params
 from cereal import car
 from common.conversions import Conversions as CV
 from common.numpy_fast import mean
@@ -42,6 +42,8 @@ class CarState(CarStateBase):
     self.low_speed_lockout = False
     self.acc_type = 1
     self.lkas_hud = {}
+    self.dist_btn = False
+    self.params = Params()
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -132,6 +134,14 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in (TSS2_CAR | RADAR_ACC_CAR):
       if not (self.CP.flags & ToyotaFlags.SMART_DSU.value):
         self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
+        distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
+        if self.dist_btn != distance_button:
+          self.dist_btn = distance_button
+          current_state = self.params.get_bool("ExperimentalMode")
+          
+          if distance_button:
+            self.params.put_bool("ExperimentalMode", not current_state)
+            
       ret.stockFcw = bool(cp_acc.vl["ACC_HUD"]["FCW"])
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
