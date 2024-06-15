@@ -1,6 +1,7 @@
 import copy
 
 from cereal import car
+from common.params import Params
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import mean
 from openpilot.common.filter_simple import FirstOrderFilter
@@ -47,7 +48,9 @@ class CarState(CarStateBase):
 
     self.low_speed_lockout = False
     self.acc_type = 1
-    self.lkas_hud = {}
+    self.lkas_hud = {}    
+    self.dist_btn = False
+    self.params = Params()
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -135,6 +138,14 @@ class CarState(CarStateBase):
       if not (self.CP.flags & ToyotaFlags.SMART_DSU.value):
         self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
       ret.stockFcw = bool(cp_acc.vl["PCS_HUD"]["FCW"])
+      
+      distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
+      if self.dist_btn != distance_button:
+        self.dist_btn = distance_button
+        current_state = self.params.get_bool("ExperimentalMode")
+
+        if distance_button:
+          self.params.put_bool("ExperimentalMode", not current_state)
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
     # these cars are identified by an ACC_TYPE value of 2.
@@ -167,13 +178,14 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint not in UNSUPPORTED_DSU_CAR:
       self.pcm_follow_distance = cp.vl["PCM_CRUISE_2"]["PCM_FOLLOW_DISTANCE"]
 
-    if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) or (self.CP.flags & ToyotaFlags.SMART_DSU and not self.CP.flags & ToyotaFlags.RADAR_CAN_FILTER):
-      # distance button is wired to the ACC module (camera or radar)
-      self.prev_distance_button = self.distance_button
-      if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
-        self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
-      else:
-        self.distance_button = cp.vl["SDSU"]["FD_BUTTON"]
+    # I do not want this feature.
+    # if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) or (self.CP.flags & ToyotaFlags.SMART_DSU and not self.CP.flags & ToyotaFlags.RADAR_CAN_FILTER):
+    #   # distance button is wired to the ACC module (camera or radar)
+    #   self.prev_distance_button = self.distance_button
+    #   if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
+    #     self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
+    #   else:
+    #     self.distance_button = cp.vl["SDSU"]["FD_BUTTON"]
 
     return ret
 
