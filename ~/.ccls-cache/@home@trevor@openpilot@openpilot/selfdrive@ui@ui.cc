@@ -159,6 +159,7 @@ void Device::resetInteractiveTimeout(int timeout) {
 
 void Device::updateBrightness(const UIState &s) {
   float clipped_brightness = offroad_brightness;
+
   if (s.scene.started && s.scene.light_sensor >= 0) {
     clipped_brightness = s.scene.light_sensor;
 

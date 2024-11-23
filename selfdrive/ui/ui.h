@@ -50,6 +50,12 @@ const QColor bg_colors [] = {
   [STATUS_ENGAGED] = QColor(0x17, 0x86, 0x44, 0xf1),
 };
 
+enum BrightnessPreference{
+    DIM=0,
+    AUTO,
+    BRIGHT
+};
+
 typedef struct UIScene {
   Eigen::Matrix3f view_from_calib = VIEW_FROM_DEVICE;
   Eigen::Matrix3f view_from_wide_calib = VIEW_FROM_DEVICE;
@@ -60,6 +66,7 @@ typedef struct UIScene {
   float light_sensor = -1;
   bool started, ignition, is_metric;
   uint64_t started_frame;
+  BrightnessPreference brightness_preference;
 } UIScene;
 
 class UIState : public QObject {
