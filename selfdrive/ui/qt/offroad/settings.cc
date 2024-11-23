@@ -70,6 +70,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       tr("Display speed in km/h instead of mph."),
       "../assets/offroad/icon_metric.png",
     },
+
   };
 
 
@@ -80,6 +81,13 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
                                              "your steering wheel distance button."),
                                           "../assets/offroad/icon_speed_limit.png",
                                           longi_button_texts);
+
+
+  brightness_setting = new ButtonParamControl("BrightnessSetting", tr("Brightness"),
+                                          tr("Control the brightness of the display. Dim will set to 20%, Auto will act as normal, Bright will set to 80%"),
+                                          "../assets/offroad/icon_speed_limit.png",
+                                          {tr("Dim"), tr("Auto"), tr("Bright")});
+
 
   // set up uiState update for personality setting
   QObject::connect(uiState(), &UIState::uiUpdate, this, &TogglesPanel::updateState);
@@ -96,6 +104,10 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     // insert longitudinal personality after NDOG toggle
     if (param == "DisengageOnAccelerator") {
       addItem(long_personality_setting);
+    }
+
+    if (param == "IsMetric") {
+      addItem(brightness_setting);
     }
   }
 
