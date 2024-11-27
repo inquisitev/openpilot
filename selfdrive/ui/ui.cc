@@ -180,7 +180,7 @@ void Device::updateBrightness(const UIState &s) {
         brightness = 100;
         break;
     case DIM:
-        brightness = 30;
+        brightness = 15;
         break;
     default:
         break;
