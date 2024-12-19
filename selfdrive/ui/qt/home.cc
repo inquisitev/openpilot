@@ -8,6 +8,7 @@
 #include "selfdrive/ui/qt/offroad/experimental_mode.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
+#include "selfdrive/ui/qt/widgets/storage.h"
 
 // HomeWindow: the container for the offroad and onroad UIs
 
@@ -123,16 +124,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 
     // left: PrimeAdWidget
     QStackedWidget *left_widget = new QStackedWidget(this);
-    QVBoxLayout *left_prime_layout = new QVBoxLayout();
-    QWidget *prime_user = new PrimeUserWidget();
-    prime_user->setStyleSheet(R"(
-    border-radius: 10px;
-    background-color: #333333;
-    )");
-    left_prime_layout->addWidget(prime_user);
-    left_prime_layout->addStretch();
-    left_widget->addWidget(new LayoutWidget(left_prime_layout));
-    left_widget->addWidget(new PrimeAdWidget);
+    left_widget->addWidget(new StorageWidget);
     left_widget->setStyleSheet("border-radius: 10px;");
 
     connect(uiState()->prime_state, &PrimeState::changed, [left_widget]() {
