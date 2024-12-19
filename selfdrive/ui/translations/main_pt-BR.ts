@@ -123,6 +123,10 @@
         <source>Longitudinal Maneuver Mode</source>
         <translation>Modo Longitudinal Maneuver</translation>
     </message>
+    <message>
+        <source>Clear</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DevicePanel</name>
@@ -925,6 +929,21 @@ Isso pode levar até um minuto.</translation>
     </message>
 </context>
 <context>
+    <name>StorageWidget</name>
+    <message>
+        <source>Current storage: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Settings</source>
+        <translation type="unfinished">Abrir Configurações</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>TermsPage</name>
     <message>
         <source>Terms &amp; Conditions</source>
@@ -1064,6 +1083,26 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation>Habilite o monitoramento do motorista mesmo quando o openpilot não estiver acionado.</translation>
+    </message>
+    <message>
+        <source>Brightness</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Control the brightness of the display. Dim will set to 20%, Auto will act as normal, Bright will set to 80%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dim</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Auto</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bright</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
