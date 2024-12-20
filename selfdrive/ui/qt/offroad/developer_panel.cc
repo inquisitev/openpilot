@@ -1,10 +1,14 @@
 #include <QDebug>
+#include <iostream>
 
 #include "selfdrive/ui/qt/offroad/developer_panel.h"
+#include "qprocess.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 
-DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
+DeveloperPanel::DeveloperPanel(SettingsWindow *parent)
+  : ListWidget(parent)
+  , clearStorageProcess(std::make_unique<QProcess>()) {
   // SSH keys
   addItem(new SshToggle());
   addItem(new SshControl());
@@ -23,14 +27,46 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(longManeuverToggle);
 
-  // Joystick and longitudinal maneuvers should be hidden on release branches
-  // also the toggles should be not available to change in onroad state
-  const bool is_release = params.getBool("IsReleaseBranch");
-  QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
+  storageClearButton = new ButtonControl("Storage: --\% remaining", tr("Clear"));
+  addItem(storageClearButton);
+
+  QObject::connect(storageClearButton, &ButtonControl::clicked, [=]() {
+        clearStorageProcess->start("python3 /data/openpilot/system/loggerd/delete_media.py");
+  });
+
+  is_release = params.getBool("IsReleaseBranch");
+  QObject::connect(uiState(), &UIState::offroadTransition, [=](bool _offroad) {
     for (auto btn : findChildren<ParamControl *>()) {
       btn->setVisible(!is_release);
-      btn->setEnabled(offroad);
+      btn->setEnabled(_offroad);
     }
   });
 
+  // Toggles should be not available to change in onroad state
+  QObject::connect(uiState(), &UIState::offroadTransition, this, &DeveloperPanel::updateToggles);
+}
+
+void DeveloperPanel::updateToggles(bool _offroad) {
+  auto &sm = *(uiState()->sm);
+
+  int freeperc = static_cast<int>(sm["deviceState"].getDeviceState().getFreeSpacePercent());
+  storageClearButton->setTitle(QString("Storage: %1\% remaining").arg(freeperc));
+
+  for (auto btn : findChildren<ParamControl *>()) {
+    btn->setVisible(!is_release);
+    btn->setEnabled(_offroad);
+  }
+
+  // longManeuverToggle should not be toggleable if the car don't have longitudinal control
+  auto cp_bytes = params.get("CarParamsPersistent");
+  if (!cp_bytes.empty()) {
+    AlignedBuffer aligned_buf;
+    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
+    cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
+    longManeuverToggle->setEnabled(hasLongitudinalControl(CP) && _offroad);
+  } else {
+    longManeuverToggle->setEnabled(false);
+  }
+
+  offroad = _offroad;
 }
