@@ -1,11 +1,15 @@
 #include <QDebug>
+#include <iostream>
 
 #include "selfdrive/ui/qt/offroad/developer_panel.h"
+#include "qprocess.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "common/util.h"
 
-DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
+DeveloperPanel::DeveloperPanel(SettingsWindow *parent)
+  : ListWidget(parent)
+  , clearStorageProcess(std::make_unique<QProcess>()) {
   // SSH keys
   addItem(new SshToggle());
   addItem(new SshControl());
@@ -24,6 +28,13 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(longManeuverToggle);
 
+  storageClearButton = new ButtonControl("Storage: --\% remaining", tr("Clear"));
+  addItem(storageClearButton);
+
+  QObject::connect(storageClearButton, &ButtonControl::clicked, [=]() {
+        clearStorageProcess->start("python3 /data/openpilot/system/loggerd/delete_media.py");
+  });
+
   // Joystick and longitudinal maneuvers should be hidden on release branches
   is_release = params.getBool("IsReleaseBranch");
 
@@ -32,6 +43,11 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
 }
 
 void DeveloperPanel::updateToggles(bool _offroad) {
+  auto &sm = *(uiState()->sm);
+
+  int freeperc = static_cast<int>(sm["deviceState"].getDeviceState().getFreeSpacePercent());
+  storageClearButton->setTitle(QString("Storage: %1\% remaining").arg(freeperc));
+
   for (auto btn : findChildren<ParamControl *>()) {
     btn->setVisible(!is_release);
     btn->setEnabled(_offroad);
