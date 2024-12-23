@@ -19,6 +19,17 @@ from openpilot.common.realtime import set_core_affinity
 from openpilot.system.hardware.hw import Paths
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
+import logging
+from logging.handlers import RotatingFileHandler
+log_file_path = '/data/33993_log/uploader_log.txt'
+os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
+logger = logging.getLogger('uploader')
+logger.setLevel(logging.DEBUG)
+handler = RotatingFileHandler(log_file_path, maxBytes=100*1024*1024, backupCount=20)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
 
 NetworkType = log.DeviceState.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'
@@ -159,9 +170,11 @@ class Uploader:
         return requests.put(url, data=data, headers=headers, timeout=10)
 
   def upload(self, name: str, key: str, fn: str, network_type: int, metered: bool) -> bool:
+    logger.debug(f"Attempting to upload. Name: {name}, key: {key}, fn, {fn}, network_type: {network_type}, metered: {metered}")
     try:
       sz = os.path.getsize(fn)
     except OSError:
+      logger.debug("failed to upload. getsize failed")
       cloudlog.exception("upload: getsize failed")
       return False
 
@@ -172,6 +185,7 @@ class Uploader:
       success = True
     elif name in self.immediate_priority and sz > UPLOAD_QLOG_QCAM_MAX_SIZE:
       cloudlog.event("uploader_too_large", key=key, fn=fn, sz=sz)
+      logger.debug("uploader too large")
       success = True
     else:
       start_time = time.monotonic()
@@ -179,8 +193,11 @@ class Uploader:
       stat = None
       last_exc = None
       try:
+        logger.debug("Starting upload")
         stat = self.do_upload(key, fn)
+        logger.debug(f"Upload result: {stat}")
       except Exception as e:
+        logger.debug(f"Exception while uploading {e}")
         last_exc = (e, traceback.format_exc())
 
       if stat is not None and stat.status_code in (200, 201, 401, 403, 412):
@@ -188,15 +205,18 @@ class Uploader:
         dt = time.monotonic() - start_time
         if stat.status_code == 412:
           cloudlog.event("upload_ignored", key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
+          logger.debug(f"Upload ignored")
         else:
           content_length = int(stat.request.headers.get("Content-Length", 0))
           speed = (content_length / 1e6) / dt
           cloudlog.event("upload_success", key=key, fn=fn, sz=sz, content_length=content_length,
                          network_type=network_type, metered=metered, speed=speed)
+          logger.debug(f"Upload successful")
         success = True
       else:
         success = False
         cloudlog.event("upload_failed", stat=stat, exc=last_exc, key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
+        logger.debug(f"upload failed")
 
     if success:
       # tag file as uploaded
@@ -205,6 +225,7 @@ class Uploader:
       except OSError:
         cloudlog.event("uploader_setxattr_failed", exc=last_exc, key=key, fn=fn, sz=sz)
 
+    logger.debug(f"upload attempt finished. result: {success}")
     return success
 
 
