@@ -85,16 +85,7 @@ def deleter_thread(exit_event):
       preserved_dirs = get_preserved_segments(dirs)
       logger.debug(f"Preserved directories: {preserved_dirs}")
 
-      ct = datetime.datetime.now()
-      ts = ct.timestamp()
-      time_stamp = datetime.datetime.fromtimestamp(ts).strftime('%Y_%m_%d_%H_%M_%S')
-      lsof_path = os.path.join("/", "data", "33993_log", f"lsof_from_del_attempt_{time_stamp}_before_deleter.txt")
-      logger.debug(f"executing lsof /data/media/0/realdata > {lsof_path}")
-      os.system(f"echo 'ls | wc' BEGIN: >> {lsof_path}")
-      os.system(f"ls | wc >> {lsof_path}")
-      os.system(f"echo lsof BEGIN: >> {lsof_path}")
-      os.system(f"lsof /data/media/0/realdata >> {lsof_path}")
-      # remove the earliest directory we can
+            # remove the earliest directory we can
       for delete_dir in sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
         delete_path = os.path.join(Paths.log_root(), delete_dir)
         logger.debug(f"Attempting to delete {delete_path}")
@@ -123,10 +114,6 @@ def deleter_thread(exit_event):
             logger.exception(f"Unexpected issue deleting {delete_path}: {e}", exc_info=True)
             raise
 
-      os.system(f"echo lsof END: > {lsof_path}")
-      lsof_path = os.path.join("/", "data", "33993_log", f"lsof_from_del_attempt_{time_stamp}_after_deleter.txt")
-      os.system(f"lsof /data/media/0/realdata >> {lsof_path}")
-      os.system(f"ls | wc >> {lsof_path}")
       exit_event.wait(.1)
       logger.debug("setting exit event")
     else:
