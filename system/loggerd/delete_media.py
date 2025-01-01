@@ -4,6 +4,7 @@ import shutil
 import datetime
 
 os.system('sh /data/openpilot/system/loggerd/capture_33993_data.sh')
+folder = os.path.join('/', 'data', 'media', '0', 'realdata')
 for filename in os.listdir(folder):
     file_path = os.path.join(folder, filename)
     try:
